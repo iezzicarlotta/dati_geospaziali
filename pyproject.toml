@@ -1,0 +1,14 @@
+[project]
+name = "fontanelle-milano"
+version = "0.1.0"
+description = "Project skeleton for Fontanelle Milano web app"
+requires-python = ">=3.11"
+
+dependencies = [
+  "fastapi",
+  "flask",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
