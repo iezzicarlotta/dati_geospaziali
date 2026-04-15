@@ -1,12 +1,475 @@
 <!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fontanelle Milano</title>
-  </head>
-  <body>
-    <div id="app-root"></div>
-    <script src="../src/main.js" type="module"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Fontanelle Milano - Mappatura e analisi delle fontanelle pubbliche di Milano">
+  
+  <title>Fontanelle Milano</title>
+  
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="/css/design-system.css">
+  
+  <!-- Component Styles -->
+  <link rel="stylesheet" href="/css/components.css">
+  
+  <!-- Page Specific Styles -->
+  <link rel="stylesheet" href="/css/pages/home.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header" role="banner">
+      <div class="container">
+        <div class="header-content">
+          <div class="header-branding">
+            <div class="logo">
+              <h1>Fontanelle Milano</h1>
+            </div>
+            <p class="tagline">Mappatura e analisi delle fontanelle pubbliche</p>
+          </div>
+          
+          <nav class="header-nav" role="navigation">
+            <ul class="nav-menu">
+              <li><a href="#map" class="nav-link">Mappa</a></li>
+              <li><a href="#search" class="nav-link">Ricerca</a></li>
+              <li><a href="#statistics" class="nav-link">Statistiche</a></li>
+              <li><a href="#about" class="nav-link">Informazioni</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" role="main">
+      <!-- Hero Section -->
+      <section class="section section-hero" id="hero">
+        <div class="container">
+          <div class="hero-content">
+            <h2>Scopri le fontanelle di Milano</h2>
+            <p class="hero-subtitle">
+              Una risorsa completa per localizzare, analizzare e comprendere 
+              la distribuzione delle fontanelle pubbliche nel territorio milanese.
+            </p>
+            <div class="hero-cta">
+              <a href="#search" class="btn btn-primary btn-lg">Inizia la ricerca</a>
+              <a href="#map" class="btn btn-outline btn-lg">Visualizza mappa</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Search & Filter Section -->
+      <section class="section" id="search">
+        <div class="container">
+          <div class="section-header">
+            <h2>Ricerca e Filtri</h2>
+            <p class="text-secondary">Trova fontanelle per NIL, vicinanza geografica o con filtri avanzati</p>
+          </div>
+
+          <!-- Tab Navigation -->
+          <div class="tabs mb-8">
+            <button class="tab-btn active" data-tab="tab-search-nil">
+              Ricerca per NIL
+            </button>
+            <button class="tab-btn" data-tab="tab-search-nearby">
+              Ricerca per Posizione
+            </button>
+            <button class="tab-btn" data-tab="tab-search-advanced">
+              Filtri Avanzati
+            </button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="tabs-content">
+            <!-- Tab 1: Search by NIL -->
+            <div class="tab-content active" id="tab-search-nil">
+              <div class="card">
+                <div class="card-body">
+                  <form class="search-form" id="form-search-nil">
+                    <div class="form-group">
+                      <label for="nil-select">Seleziona un NIL</label>
+                      <select id="nil-select" name="nil_id" required>
+                        <option value="">-- Scegli un NIL --</option>
+                        <!-- Populated by API -->
+                      </select>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="page-size-nil">Risultati per pagina</label>
+                        <select id="page-size-nil" name="page_size">
+                          <option value="10">10</option>
+                          <option value="25">25</option>
+                          <option value="50">50</option>
+                        </select>
+                      </div>
+
+                      <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-primary btn-block">
+                          Cerca
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Results -->
+              <div id="results-nil" class="results-container mt-8"></div>
+            </div>
+
+            <!-- Tab 2: Search by Location -->
+            <div class="tab-content" id="tab-search-nearby">
+              <div class="card">
+                <div class="card-body">
+                  <form class="search-form" id="form-search-nearby">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="lat-input">Latitudine</label>
+                        <input 
+                          type="number" 
+                          id="lat-input" 
+                          name="latitude" 
+                          placeholder="45.4642"
+                          step="0.00001"
+                          required
+                        >
+                      </div>
+
+                      <div class="form-group">
+                        <label for="lon-input">Longitudine</label>
+                        <input 
+                          type="number" 
+                          id="lon-input" 
+                          name="longitude" 
+                          placeholder="9.1900"
+                          step="0.00001"
+                          required
+                        >
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="radius-input">Raggio (metri)</label>
+                        <input 
+                          type="number" 
+                          id="radius-input" 
+                          name="radius" 
+                          value="500"
+                          min="100"
+                          max="5000"
+                          step="100"
+                        >
+                      </div>
+
+                      <div class="form-group">
+                        <label for="page-size-nearby">Risultati per pagina</label>
+                        <select id="page-size-nearby" name="page_size">
+                          <option value="10">10</option>
+                          <option value="25">25</option>
+                          <option value="50">50</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <button type="button" class="btn btn-secondary" id="btn-use-geolocation">
+                          Usa Posizione Attuale
+                        </button>
+                      </div>
+
+                      <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">
+                          Cerca Vicino
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Results -->
+              <div id="results-nearby" class="results-container mt-8"></div>
+            </div>
+
+            <!-- Tab 3: Advanced Filters -->
+            <div class="tab-content" id="tab-search-advanced">
+              <div class="card">
+                <div class="card-body">
+                  <form class="search-form" id="form-search-advanced">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="municipio-input">Municipio</label>
+                        <input 
+                          type="text" 
+                          id="municipio-input" 
+                          name="municipio" 
+                          placeholder="Es: Municipio 1"
+                        >
+                      </div>
+
+                      <div class="form-group">
+                        <label for="cap-input">CAP</label>
+                        <input 
+                          type="text" 
+                          id="cap-input" 
+                          name="cap" 
+                          placeholder="Es: 20100"
+                        >
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="page-size-advanced">Risultati per pagina</label>
+                        <select id="page-size-advanced" name="page_size">
+                          <option value="10">10</option>
+                          <option value="25">25</option>
+                          <option value="50">50</option>
+                        </select>
+                      </div>
+
+                      <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">
+                          Applica Filtri
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Results -->
+              <div id="results-advanced" class="results-container mt-8"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map Section -->
+      <section class="section" id="map">
+        <div class="container">
+          <div class="section-header">
+            <h2>Mappa Interattiva</h2>
+            <p class="text-secondary">Visualizza la distribuzione delle fontanelle sul territorio</p>
+          </div>
+
+          <div class="map-container">
+            <div id="map-canvas" class="map-canvas">
+              <!-- Map will be rendered here -->
+              <div class="empty-state">
+                <div class="empty-icon">🗺️</div>
+                <div class="empty-title">Mappa</div>
+                <div class="empty-message">
+                  La mappa interattiva sarà caricata qui. 
+                  Effettua una ricerca per visualizzare i risultati sulla mappa.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="map-legend mt-8">
+            <h3 class="map-legend-title">Legenda Densità</h3>
+            <div class="legend-items">
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: #10b981;"></span>
+                <span class="legend-label">Molto bassa</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: #84cc16;"></span>
+                <span class="legend-label">Bassa</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: #eab308;"></span>
+                <span class="legend-label">Media</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: #f97316;"></span>
+                <span class="legend-label">Alta</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: #ef4444;"></span>
+                <span class="legend-label">Molto alta</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Statistics Section -->
+      <section class="section section-alt" id="statistics">
+        <div class="container">
+          <div class="section-header">
+            <h2>Statistiche</h2>
+            <p class="text-secondary">Analisi della distribuzione delle fontanelle per NIL</p>
+          </div>
+
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-1 grid-cols-3-md mb-8">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-total-fountains">---</div>
+              <div class="stat-label">Fontanelle Totali</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-total-nils">---</div>
+              <div class="stat-label">NIL Analizzati</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-avg-density">---</div>
+              <div class="stat-label">Densità Media</div>
+            </div>
+          </div>
+
+          <!-- Statistics Table -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Distribuzione per NIL</h3>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-wrapper">
+                <table class="table" id="statistics-table">
+                  <thead>
+                    <tr>
+                      <th>NIL</th>
+                      <th>Nome</th>
+                      <th>Fontanelle</th>
+                      <th>Densità</th>
+                      <th>Categoria</th>
+                    </tr>
+                  </thead>
+                  <tbody id="statistics-tbody">
+                    <!-- Populated by API -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card-footer text-center">
+              <p class="text-sm text-muted">
+                Densità calcolata come fontanelle per km²
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section class="section" id="about">
+        <div class="container container-sm">
+          <div class="section-header text-center">
+            <h2>Informazioni</h2>
+          </div>
+
+          <div class="card">
+            <div class="card-body">
+              <h3>Cos'è questo progetto?</h3>
+              <p>
+                Fontanelle Milano è una piattaforma per esplorare, analizzare e comprendere 
+                la distribuzione delle fontanelle pubbliche sul territorio milanese.
+              </p>
+
+              <h3 class="mt-8">Fonti dei dati</h3>
+              <p>
+                I dati provengono da fonti ufficiali della città di Milano e sono 
+                georeferenziati per garantire massima precisione nella localizzazione.
+              </p>
+
+              <h3 class="mt-8">Come usare l'applicazione</h3>
+              <ul class="info-list">
+                <li>
+                  <strong>Ricerca per NIL:</strong> Seleziona un Nucleo di Identità Locale 
+                  dalla lista a tendina per vedere tutte le fontanelle presenti in quell'area
+                </li>
+                <li>
+                  <strong>Ricerca per Posizione:</strong> Inserisci coordinate geografiche 
+                  o usa la tua posizione attuale per trovare fontanelle vicine
+                </li>
+                <li>
+                  <strong>Filtri Avanzati:</strong> Usa filtri per municipio o CAP per 
+                  ricerche più specifiche
+                </li>
+                <li>
+                  <strong>Mappa:</strong> Visualizza i risultati delle ricerche su mappa interattiva
+                </li>
+                <li>
+                  <strong>Statistiche:</strong> Consulta tabelle e grafici con l'analisi 
+                  della distribuzione delle fontanelle
+                </li>
+              </ul>
+
+              <h3 class="mt-8">Contatti e Feedback</h3>
+              <p>
+                Per segnalazioni, suggerimenti o informazioni, contattare il team di sviluppo.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h1>Fontanelle Milano</h1>
+            <p class="text-sm">
+              Mappatura e analisi delle fontanelle pubbliche di Milano
+            </p>
+          </div>
+
+          <div class="footer-section">
+            <h4>Link Utili</h4>
+            <ul class="footer-links">
+              <li><a href="#search">Ricerca</a></li>
+              <li><a href="#map">Mappa</a></li>
+              <li><a href="#statistics">Statistiche</a></li>
+              <li><a href="#about">Informazioni</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-section">
+            <h4>Risorse</h4>
+            <ul class="footer-links">
+              <li><a href="/api/docs" target="_blank">API Documentation</a></li>
+              <li><a href="https://github.com" target="_blank">GitHub</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p class="text-sm text-muted">
+            &copy; 2026 Fontanelle Milano. Tutti i diritti riservati.
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Loading Overlay (hidden by default) -->
+    <div id="loading-overlay" class="loading-overlay hidden" role="status">
+      <div class="spinner"></div>
+      <p>Caricamento in corso...</p>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <!-- Scripts -->
+  <!-- Leaflet Map Library -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Application Scripts -->
+  <script src="/js/toast.js"></script>
+  <script src="/js/api-client.js"></script>
+  <script src="/js/tabs.js"></script>
+  <script src="/js/home.js"></script>
+</body>
 </html>

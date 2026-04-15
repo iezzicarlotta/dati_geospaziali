@@ -110,25 +110,3 @@ class NIL(NILCreate):
         arbitrary_types_allowed = True
         json_encoders = {ObjectId: str}
 
-
-# ====================== Legacy Schemas (for reference) ======================
-
-class LegacyFontanellaDirect(BaseModel):
-    """Legacy schema for non-GeoJSON fontanelle (if needed)."""
-    id: Optional[PyObjectId] = Field(None, alias="_id")
-    nome: str
-    descrizione: Optional[str] = None
-    coordinate: Point
-    indirizzo: str
-    quartiere: Optional[str] = None
-    nil_id: Optional[str] = None
-    stato: Literal["attiva", "manutenzione", "disattiva"] = "attiva"
-    createdAt: Optional[datetime] = None
-    updatedAt: Optional[datetime] = None
-    
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-
-

@@ -1,9 +1,11 @@
 """MongoDB connection and database management."""
 
 from pymongo import MongoClient
+from pymongo.database import Database
+from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Generator
 
 from .config import settings
 
@@ -48,7 +50,7 @@ class MongoDBConnection:
             print("✓ Disconnected from MongoDB")
     
     @classmethod
-    def get_database(cls):
+    def get_database(cls) -> Database:
         """
         Get database instance.
         
@@ -59,7 +61,7 @@ class MongoDBConnection:
         return client[settings.mongodb_database]
     
     @classmethod
-    def get_collection(cls, collection_name: str):
+    def get_collection(cls, collection_name: str) -> Collection:
         """
         Get collection instance.
         
@@ -74,7 +76,7 @@ class MongoDBConnection:
 
 
 @contextmanager
-def get_db_context():
+def get_db_context() -> Generator[Database, None, None]:
     """
     Context manager for database operations.
     Usage:

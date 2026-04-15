@@ -16,6 +16,11 @@ def test_connection():
         db = MongoDBConnection.get_database()
         print(f"✓ Connected to database: {db.name}")
         
+        # Verify database name
+        if db.name != "dbSpaziali":
+            raise ValueError(f"Wrong database name: {db.name}. Expected: dbSpaziali")
+        print(f"✓ Database name verified: {db.name}")
+        
         # Test ping
         db.client.admin.command("ping")
         print("✓ Ping successful")
@@ -57,20 +62,18 @@ def test_indexes():
     try:
         db = MongoDBConnection.get_database()
         
-        # Expected indexes
+        # Expected indexes (GeoJSON Feature format)
         expected_fontanelle = {
-            "idx_fontanelle_coordinate_geospatial",
+            "idx_fontanelle_geometry_geospatial",
             "idx_fontanelle_nil_id",
-            "idx_fontanelle_stato",
-            "idx_fontanelle_createdAt",
-            "idx_fontanelle_quartiere_stato"
+            "idx_fontanelle_municipio",
+            "idx_fontanelle_cap"
         }
         
         expected_nil = {
-            "idx_nil_geometria_geospatial",
-            "idx_nil_numero_unique",
-            "idx_nil_nome",
-            "idx_nil_createdAt"
+            "idx_nil_geometry_geospatial",
+            "idx_nil_id_unique",
+            "idx_nil_name"
         }
         
         # Get actual indexes
@@ -118,10 +121,10 @@ def test_geospatial_query():
     try:
         db = MongoDBConnection.get_database()
         
-        # Query fontanelle entro 2km dal Duomo
+        # Query fontanelle entro 2km dal Duomo (GeoJSON Feature format)
         fontanelle = list(db.fontanelle.find(
             {
-                "coordinate": {
+                "geometry": {
                     "$near": {
                         "$geometry": {
                             "type": "Point",
@@ -137,11 +140,12 @@ def test_geospatial_query():
         
         if fontanelle:
             for f in fontanelle:
-                print(f"  - {f.get('nome', 'N/A')}")
+                props = f.get('properties', {})
+                print(f"  - NIL: {props.get('NIL', 'N/A')}, Coord: {props.get('LONG_X_4326', 'N/A')}, {props.get('LAT_Y_4326', 'N/A')}")
         
-        # Query NIL containing a point
+        # Query NIL containing a point (GeoJSON Feature format)
         nil = db.nil.find_one({
-            "geometria": {
+            "geometry": {
                 "$geoIntersects": {
                     "$geometry": {
                         "type": "Point",
@@ -152,7 +156,8 @@ def test_geospatial_query():
         })
         
         if nil:
-            print(f"✓ Found NIL containing Duomo point: {nil.get('nome', 'N/A')}")
+            props = nil.get('properties', {})
+            print(f"✓ Found NIL containing Duomo point: {props.get('NIL', 'N/A')}")
         else:
             print("ℹ No NIL found containing Duomo (might be expected)")
         
@@ -167,20 +172,26 @@ def test_schemas():
     print("\n=== Testing Pydantic Schemas ===\n")
     
     try:
-        from backend.fastapi_app.schemas.fontanella import Fontanella, FontanellaCreate, Point
+        from backend.fastapi_app.schemas.fontanella import Fontanella, FontanellaCreate, Point, FontanellaProperties
         
         # Test Point schema
         point = Point(coordinates=(9.1845, 45.4642))
         print(f"✓ Point schema: {point.model_dump()}")
         
-        # Test FontanellaCreate schema
+        # Test FontanellaCreate schema (GeoJSON Feature format)
         fontanella_data = {
-            "nome": "Test Fontanella",
-            "coordinate": {"type": "Point", "coordinates": [9.1845, 45.4642]},
-            "indirizzo": "Via Test, Milano"
+            "type": "Feature",
+            "properties": {
+                "objectID": "test-1",
+                "CAP": "20100",
+                "MUNICIPIO": "1",
+                "ID_NIL": "1",
+                "NIL": "Test NIL"
+            },
+            "geometry": {"type": "Point", "coordinates": [9.1845, 45.4642]}
         }
         fontanella = FontanellaCreate(**fontanella_data)
-        print(f"✓ FontanellaCreate schema validated: {fontanella.nome}")
+        print(f"✓ FontanellaCreate schema validated: {fontanella.properties.objectID}")
         
         return True
     except Exception as e:
